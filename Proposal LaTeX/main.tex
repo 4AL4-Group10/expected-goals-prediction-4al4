@@ -14,7 +14,7 @@
 
 % This assumes your files are encoded as UTF8
 \usepackage[utf8]{inputenc}
-\usepackage{microtype}372798
+\usepackage{microtype}
 \usepackage{inconsolata}
 \usepackage{graphicx}
 
@@ -24,11 +24,11 @@
 %
 % and set <dim> to something 5cm or larger.
 
-\title{Group X Progress Report:\\My Group's Project Name}
+\title{Group 10 Progress Report:\\Expected Goals (xG) Prediction in Soccer}
 
 
-\author{First Author, Second Author, Third Author \\
-  \texttt{\{macid1,macid2,macid3\}@mcmaster.ca} }
+\author{First Author, Andrew Habib, Third Author \\
+  \texttt{\{macid1,habiba21,macid3\}@mcmaster.ca} }
 
 %\author{
 %  \textbf{First Author\textsuperscript{1}},
@@ -75,7 +75,15 @@
 
 \section{Introduction}
 
-Here, write a brief introduction to the problem you are solving. This can be adapted from your problem description and motivation from the original proposal. This should be around 0.25-0.5 pages.
+% Here, write a brief introduction to the problem you are solving. This can be adapted from your problem description and motivation from the original proposal. This should be around 0.25-0.5 pages.
+
+Expected Goals (xG) is a frequently studied metric in the realm of modern soccer analytics utilized by various teams, sports analysts, and commentators to evaluate the quality of a scoring chance independent of the observed outcome. It predicts the probability of a short in a soccer match resulting in a goal given the surrounding context used as features (examples include location, distance to goal, shooting angle, shot type, body part, technique, nearby opponents). This estimation can support analysis of team performance, player finishing, and defensive vulnerabilities while influencing future team strategies.
+
+The xG prediction problem falls under binary classification where each shot is labelled as one of two classes using the single-label approach (goal or non-goal). Rather than purely focusing on the predicted class, the objective is to produce a value depicting the probability of scoring between 0-100 percent based on qualitative and quanitative features. Given a threshold such as 50 percent, one can predict if it is a goal or not.
+
+The most significant challenge in this problem is that most of the dataset is labelled as no goal so a classifier predicting no goal, can achieve a very high accuracy without truly evaluating chance quality. For instance, while two shots may have similar distances and angles, they can yield a different outcome due to the defender's position.
+
+For this report, logistic regression is implemented along with binary cross-entropy through mini-batch gradient descent to relate shot characteristics to scoring probability. The performance of the best model in validation is compared to simple baslines Majority and Constant (0\% for every shot and predicts the average of goal labels in training data respectively) as well the xG probabilities given by StatsBomb. The test set remains reserved for final evaluation on unseen data.
 
 \section{Related Work}
 
