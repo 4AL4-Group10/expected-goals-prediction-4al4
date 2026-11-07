@@ -14,9 +14,11 @@
 
 % This assumes your files are encoded as UTF8
 \usepackage[utf8]{inputenc}
-\usepackage{microtype}372798
+\usepackage{microtype}
 \usepackage{inconsolata}
 \usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
 
 % If the title and author information does not fit in the area allocated, uncomment the following
 %
@@ -24,11 +26,11 @@
 %
 % and set <dim> to something 5cm or larger.
 
-\title{Group X Progress Report:\\My Group's Project Name}
+\title{Group 10 Progress Report:\\Expected Goals (xG) Prediction in Soccer}
 
 
-\author{First Author, Second Author, Third Author \\
-  \texttt{\{macid1,macid2,macid3\}@mcmaster.ca} }
+\author{First Author, Andrew Habib, Third Author \\
+  \texttt{\{macid1,habiba21,macid3\}@mcmaster.ca} }
 
 %\author{
 %  \textbf{First Author\textsuperscript{1}},
@@ -75,7 +77,15 @@
 
 \section{Introduction}
 
-Here, write a brief introduction to the problem you are solving. This can be adapted from your problem description and motivation from the original proposal. This should be around 0.25-0.5 pages.
+% Here, write a brief introduction to the problem you are solving. This can be adapted from your problem description and motivation from the original proposal. This should be around 0.25-0.5 pages.
+
+Expected Goals (xG) is a frequently studied metric in the realm of modern soccer analytics utilized by various teams, sports analysts, and commentators to evaluate the quality of a scoring chance independent of the observed outcome. It predicts the probability of a shot in a soccer match resulting in a goal given the surrounding context used as features (examples include location, distance to goal, shooting angle, shot type, body part, technique, nearby opponents). This estimation can support analysis of team performance, player finishing, and defensive vulnerabilities while influencing future team strategies.
+
+The xG prediction problem falls under binary classification where each shot is labelled as one of two classes using the single-label approach (goal or non-goal). Rather than purely focusing on the predicted class, the objective is to produce a value depicting the probability of scoring between 0-100 percent based on qualitative and quantitative features. Given a threshold such as 50 percent, one can predict if it is a goal or not.
+
+The most significant challenge in this problem is that most of the dataset is labelled as no goal so a classifier predicting no goal can achieve a very high accuracy without truly evaluating chance quality. For instance, while two shots may have similar distances and angles, they can yield a different outcome due to the defender's position.
+
+For this report, logistic regression is implemented along with binary cross-entropy through mini-batch gradient descent to relate shot characteristics to scoring probability. The performance of the best model in validation is compared to simple baselines Majority and Constant (0\% for every shot and predicts the average of goal labels in training data respectively) as well as the xG probabilities given by StatsBomb. The test set remains reserved for final evaluation on unseen data.
 
 \section{Related Work}
 
@@ -91,7 +101,91 @@ Describe any features you used for your model, or how your data was input to you
 
 \section{Implementation}
 
-Describe your model and implementation here. Refer to item 4. This may take around a page.
+% Describe your model and implementation here. Refer to item 4. This may take around a page.
+
+The implementation stage involved manually implementing a logistic regression model using NumPy and the techniques taught in SFWRENG 4AL3 Tutorial 3 to predict the probability that a soccer shot results in a goal. Each shot observation is represented by the 40 features described in the Features section. The target label is binary, representing goal (\(y=1\)) or no goal (\(y=0\)). Rather than simply returning a class label, the model returns a probability between 0 and 1, representing its expected-goals prediction.
+
+Before training begins, features are standardized using the training-set means and standard deviations, with operations applied element-wise. The same training-set values are used to scale validation inputs. Any zero standard deviation is replaced with 1 to avoid division by zero:
+\[
+\mathbf{x}_{\mathrm{scaled}} = (\mathbf{x} - \boldsymbol{\mu}_{\mathrm{train}})/\boldsymbol{\sigma}_{\mathrm{train}}.
+\]
+
+For an input vector \(\mathbf{x}\), the linear model produces a score, where the sigmoid function maps the value to a probability ranging between 0 and 1:
+\[
+z = \mathbf{w} \cdot \mathbf{x}_{\mathrm{scaled}} + b,
+\]
+\[
+\hat{y}=P(y=1\mid\mathbf{x})=\sigma(z)=\frac{1}{1+e^{-z}},
+\]
+
+\(\mathbf{x}_{\mathrm{scaled}}\) contains the standardized features, \(\mathbf{w}\) is the vector of learned weights, and \(b\) is the learned bias. \(\hat{y}\) represents the predicted probability of a goal, while \(y\) is the actual outcome: 1 meaning goal and 0 meaning non-goal.
+
+The model is trained by minimizing average binary cross-entropy loss. This loss function is useful beyond just evaluating whether a model correctly predicts goal or no goal since it rewards assigning higher probabilities to the correct class. The same implementation is used on both training and validation losses. Training loss measures how well the model fits the training data and influences weights and biases during gradient descent steps while validation loss is used to select the best performing model given a set of hyperparameters. The stable CE implementation was used to avoid overflow errors:
+\[
+\begin{aligned}
+L_{\mathrm{CE}}
+&= -\frac{1}{N}\sum_{i=1}^{N}
+\left[y_i\log(\hat{y}_i)+(1-y_i)\log(1-\hat{y}_i)\right] \\
+&= \frac{1}{N}\sum_{i=1}^{N}
+\left[\log(1+e^{z_i})-y_i z_i\right].
+\end{aligned}
+\]
+
+The model is optimized using mini-batch stochastic gradient descent. At the beginning of each epoch (one pass through the training set), the training observations are shuffled and split into mini-batches. Every training data point is used once per epoch. For each mini-batch, predictions are calculated using the current parameters, and the average cross-entropy gradients are computed following Tutorial 3:
+\[
+\begin{aligned}
+\frac{\partial L_{\mathrm{CE}}(\hat{y}, y)}{\partial w_j}
+&= \frac{1}{n}\sum_{i=1}^{n}
+(\hat{y}^{(i)}-y^{(i)})x_j^{(i)}, \\
+\frac{\partial L_{\mathrm{CE}}(\hat{y}, y)}{\partial b}
+&= \frac{1}{n}\sum_{i=1}^{n}
+(\hat{y}^{(i)}-y^{(i)}).
+\end{aligned}
+\]
+\(n\) is the number of rows in the current mini-batch, and \(x_j^{(i)}\) is the standardized value of feature \(j\) for data point \(i\). Since the model has 40 features, the tutorial's weight gradient is calculated for each weight \(w_j\). The weights and bias are updated after each mini-batch:
+\[
+\begin{aligned}
+w_j &\leftarrow w_j-\eta\frac{\partial L_{\mathrm{CE}}(\hat{y}, y)}{\partial w_j}, \\
+b &\leftarrow b-\eta\frac{\partial L_{\mathrm{CE}}(\hat{y}, y)}{\partial b},
+\end{aligned}
+\]
+where \(\eta\) is the learning rate. The next mini-batch uses these updated parameters. Training cross-entropy is recorded after each epoch to monitor learning. Validation loss is used only to compare different sets of hyperparameters.
+
+A random search with 20 trials over 100 epochs. Learning rates were sampled uniformly in logarithmic space between \(0.0001\) and \(0.1\), and various batch sizes were chosen \(\{32,64,128,256,512,1024\}\). A seed of 42 was used for consistency. The set of hyperparameters that yielded the lowest validation cross-entropy was selected, giving a learning rate of approximately \(0.011198\) and a mini-batch size of 32.
+
+\begingroup
+\setlength{\intextsep}{4pt}
+\begin{figure}[H]
+\centering
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\belowcaptionskip}{0pt}
+\includegraphics[width=\columnwidth]{../progress-report/artifacts/training_loss.png}
+\caption{Training cross-entropy over 100 epochs for the selected logistic regression model.}
+\label{fig:training-loss}
+\end{figure}
+\endgroup
+
+The Logistic Regression model was compared to the majority vote which always predicts no goal, the constant-probability baseline which predicts based on the full training set's average of binary labels, and the model produced by Statsbomb which uses gradient-boosted decision trees.
+
+\begin{table}[H]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrr}
+\hline
+Model/reference & Training CE & Validation CE \\
+\hline
+Logistic regression & 0.269440 & 0.266354 \\
+Majority vote & 3.025423 & 3.016689 \\
+Constant probability & 0.345455 & 0.344793 \\
+StatsBomb xG & --- & 0.264980 \\
+\hline
+\end{tabular}
+}
+\caption{Training and validation cross-entropy losses for the logistic regression, majority-class baseline, constant-probability baseline, and StatsBomb xG.}
+\label{tab:validation-loss}
+\end{table}
+
+The results show that the model our team developed using Logistic Regression yields lower losses than the Majority vote and Constant probability baseline models by 2.750335 and 0.078439 respectively. The model also performs almost as well as Statsbomb's optimized model with a difference of about -0.001374.
 
 \section{Results and Evaluation}
 
@@ -108,16 +202,7 @@ You can remove this section or comment it out, as it only contains instructions 
 \subsection{Tables and figures}
 
 See Table~\ref{citation-guide} for an example of a table and its caption.
-See Figure~\ref{fig:experiments} for an example of a figure and its caption.
 
-
-\begin{figure}[t]
-  \includegraphics[width=\columnwidth]{example-image-golden}
-  \caption{A figure with a caption that runs for more than one line.
-    Example image is usually available through the \texttt{mwe} package
-    without even mentioning it in the preamble.}
-  \label{fig:experiments}
-\end{figure}
 
 \begin{figure*}[t]
   \includegraphics[width=0.48\linewidth]{example-image-a} \hfill
@@ -177,7 +262,7 @@ This an example cross-reference to Equation~\ref{eq:example}. You can also write
 
 \section*{Team Contributions}
 
-Write in this section a few sentences describing the contributions of each team member. What did each member work on? Refer to item 7.
+\textbf{Andrew Habib (habiba21):} Completed the Introduction and Implementation sections of the report and implemented the model and training pipeline while comparing to majority, constant, and statsbomb baselines.
 
 % Bibliography entries for the entire Anthology, followed by custom entries
 %\bibliography{custom,anthology-overleaf-1,anthology-overleaf-2}
