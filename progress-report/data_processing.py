@@ -1,6 +1,6 @@
-# data_pipeline.py
+# data_processing.py
 #
-# you can run with:  python data_pipeline.py
+# you can run with:  python data_processing.py
 # Turns StatsBomb match files into one table where each row is a shot.
 # result will be saved to data/processed/shots.csv (so it can be used for training)
 
