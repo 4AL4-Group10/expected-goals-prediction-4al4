@@ -203,7 +203,7 @@ A random search with 20 trials over 100 epochs. Learning rates were sampled unif
 \end{figure}
 \endgroup
 
-The Logistic Regression model was compared to the majority vote which always predicts no goal, the constant-probability baseline which predicts based on the full training set's average of binary labels, and the model produced by Statsbomb which uses gradient-boosted decision trees.
+The Logistic Regression model was compared to majority vote which always predicts no goal, constant-probability baseline which predicts based on the full training set's average of binary labels, and the model produced by Statsbomb which uses gradient-boosted decision trees. Note: Statsbomb's validation loss comes from the same CE loss equation where \(\hat{y}_i\) is the Statsbomb xG probability extracted from the dataset, while \(y_i\) is the actual outcome both coming from the validation split.
 
 \begin{table}[H]
 \centering
