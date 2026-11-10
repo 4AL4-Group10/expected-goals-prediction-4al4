@@ -1,4 +1,4 @@
-"""Train baselines and logistic regression; reserve test matches for evaluation."""
+"""Train baselines and logistic regression and reserve test matches for evaluation."""
 
 import argparse
 import json
@@ -16,18 +16,10 @@ HERE = Path(__file__).resolve().parent
 
 def load_data(path):
     df = pd.read_csv(path)
-    required = set(NUMBER_COLUMNS + FLAG_COLUMNS + list(CATEGORY_OPTIONS) + ["match_id", "event_id", "is_goal", "statsbomb_xg"])
-    missing = required - set(df.columns)
-    if missing:
-        raise ValueError(f"Missing columns: {sorted(missing)}")
-    
     X, y = build_feature_matrix(df)
-    if not np.isfinite(X.to_numpy()).all():
-        raise ValueError("Features contain missing or infinite values; rerun preprocessing.")
     return df, X, y
 
 def split_data(df, seed):
-    # Split unique match IDs, then assign all their shots together.
     match_ids = np.sort(df.match_id.unique())
     train_matches, holdout_matches = train_test_split(match_ids, test_size=0.30, random_state=seed)
     validation_matches, test_matches = train_test_split(holdout_matches, test_size=0.50, random_state=seed)
@@ -38,14 +30,14 @@ def split_data(df, seed):
     indices = {name: np.flatnonzero(labels.eq(name)) for name in ["train", "validation", "test"]}
     return labels, indices
 
-# 1. Prepare training and validation inputs (test data remains reserved).
+# Prepare training and validation inputs (test data remains reserved).
 def prepare_data(data_path, seed):
     df, X, y = load_data(data_path)
     labels, indices = split_data(df, seed)
     train, validation = indices["train"], indices["validation"]
     return df, X, y, labels, indices, (X.iloc[train], y.iloc[train]), (X.iloc[validation], y.iloc[validation])
 
-# 2. Random search, following Tutorial 3's trial records and model dictionary. Find best model
+# Random hyperparam search, following Tutorial 3's trial records and model dictionary. Find model with lowest validation loss
 def search_hyperparameters(X_train, y_train, X_val, y_val, n_trials, learning_rate_range, batch_sizes, epochs, seed):
     search_rng = np.random.default_rng(seed)
     trial_records, trial_models = [], {}
@@ -84,7 +76,7 @@ def search_hyperparameters(X_train, y_train, X_val, y_val, n_trials, learning_ra
     print("Selected trial:", best_trial_id)
     return best_search_model, leaderboard
 
-# 4. Fit reference baselines and compare the selected model on both splits.
+# Logistic Regression Model to Baseline Comparison
 def compare_baselines(best, X_train, y_train, X_val, y_val, statsbomb_xg):
     models = make_baselines()
     for model in models.values():
@@ -99,7 +91,6 @@ def compare_baselines(best, X_train, y_train, X_val, y_val, statsbomb_xg):
                 "batch_size": best.batch_size if name == "logistic_regression" else None,
                 "cross_entropy": model.cross_entropy(X_split, y_split),
             })
-    # External benchmark only; its training matches may overlap this dataset.
     p = np.clip(np.asarray(statsbomb_xg, dtype=float), 1e-12, 1 - 1e-12)
     target = np.asarray(y_val)
     records.append({
@@ -109,7 +100,7 @@ def compare_baselines(best, X_train, y_train, X_val, y_val, statsbomb_xg):
     })
     return models, pd.DataFrame(records)
 
-# 5. Save reproducible outputs for the evaluation/report handoff.
+# Save outputs to be used for evaluation
 def save_results(output, models, leaderboard, df, labels, features, results):
     output.mkdir(parents=True, exist_ok=True)
     for name, model in models.items():
@@ -131,13 +122,11 @@ def save_results(output, models, leaderboard, df, labels, features, results):
     with open(output / "training_config.json", "w", encoding="utf-8") as file:
         json.dump(config, file, indent=2)
 
-
 # 6. Plot the selected model's learning curve, as in Tutorial 3.
 def plot_training_loss(model, output):
     try:
         import matplotlib
     except ModuleNotFoundError:
-        print("Plot skipped: install matplotlib from requirements.txt.")
         return
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -161,13 +150,6 @@ def parse_args():
     parser.add_argument("--batch-sizes", type=int, nargs="+", default=[256, 1024])
     parser.add_argument("--epochs", type=int, default=100)
     args = parser.parse_args()
-    if (any(not np.isfinite(lr) or lr <= 0 for lr in args.learning_rate_range)
-            or args.learning_rate_range[0] > args.learning_rate_range[1] or args.n_trials <= 0
-            or any(size <= 0 for size in args.batch_sizes) or args.epochs <= 0):
-        parser.error("Use positive trials, batch sizes, epochs, and an ordered positive learning-rate range.")
-    if not args.data.is_file():
-        parser.error(f"Dataset not found: {args.data}. Run data_processing.py or pass --data.")
-
     return args
 
 def main():
@@ -181,8 +163,7 @@ def main():
     save_results(args.output, models, leaderboard, df, labels, X.columns, results)
     plot_training_loss(best, args.output)
     print(results.to_string(index=False))
-    print(f"Selected lr={best.learning_rate}, batch={best.batch_size}; "
-          f"outputs saved to {args.output.resolve()}")
+    print(f"Selected lr={best.learning_rate}, batch={best.batch_size}, outputs saved to {args.output.resolve()}")
 
 if __name__ == "__main__":
     main()

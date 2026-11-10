@@ -1,6 +1,6 @@
-# data_pipeline.py
+# data_processing.py
 #
-# you can run with:  python data_pipeline.py
+# you can run with:  python data_processing.py
 # Turns StatsBomb match files into one table where each row is a shot.
 # result will be saved to data/processed/shots.csv (so it can be used for training)
 
@@ -74,7 +74,7 @@ def defensive_features(shooter, freeze_frame):
     # freeze frame=  list of nearby players and where they were standing
     # when shot was taken. We turn it into a few numbers the model can use
 
-    # Penalties don't have a freeze frame since of course no one in the way, nobody close by and keeper on goal line
+    # Penalties don't have a freeze frame so will fill them in like a normal penalty with no one in the way and keeper on goal line
     if not freeze_frame:
         return {"defenders_in_way": 0, "nearest_opponent_dist": 30,
                 "keeper_dist_to_goal": 0, "has_freeze_frame": 0}
@@ -158,7 +158,7 @@ def get_shots(path):
 
 def get_match_info():
     # Competition and mens/womens info is kept in a separate matches folder
-    # returns lookup of match id in (competition, gender)
+    # returns lookup of match id to (competition, gender)
     info = {}
     for path in glob.glob(os.path.join(DATA_ROOT, "matches", "*", "*.json")):
         with open(path, encoding="utf-8") as f:

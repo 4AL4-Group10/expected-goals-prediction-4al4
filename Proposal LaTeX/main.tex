@@ -29,8 +29,8 @@
 \title{Group 10 Progress Report:\\Expected Goals (xG) Prediction in Soccer}
 
 
-\author{First Author, Andrew Habib, Third Author \\
-  \texttt{\{macid1,habiba21,macid3\}@mcmaster.ca} }
+\author{Ali Zia, Andrew Habib, Gurmanjot Minhas \\
+  \texttt{\{ziam8,habiba21,minhag7\}@mcmaster.ca} }
 
 %\author{
 %  \textbf{First Author\textsuperscript{1}},
@@ -92,8 +92,46 @@ For this report, logistic regression is implemented along with binary cross-entr
 Here, talk about the related work you encountered for your approach. Cite at least 5 references. Refer to item 2. No one has done exactly your task? Write about the most similar thing you can find. This should be around 0.25-0.5 pages.
 
 \section{Dataset}
+% You should write about your dataset here, following the guidelines regarding item 1. This section may be 0.5-1 pages. Depending on your specific dataset, you may want to include subsections for the preprocessing, annotation, etc.
+\subsection{StatsBomb Open Data}
+The dataset used in this project is \href{https://github.com/hudl/open-data}{StatsBomb Open Data} which is a free public collection of soccer event data hosted on GitHub. The dataset was collected via StatsBomb analysts going through match footage and tagging every action involving the ball (i.e. what happened, where it happened on the pitch and when it happened). Each match is stored as its own JSON file exported from the StatsBomb API. The data extraction process did not require web scraping or API access as the data is openly available. As a result, we cloned the repository directly and use the data under the StatsBomb Public Data User Agreement.
+The current release of the dataset has 4,235 matches which is more than the 3,235 we identified in our proposal since the repository has grown since then. These matches come from 24 men's and women's competitions, including the top five European leagues, international tournaments and the FA Women's Super League.
 
-You should write about your dataset here, following the guidelines regarding item 1. This section may be 0.5-1 pages. Depending on your specific dataset, you may want to include subsections for the preprocessing, annotation, etc.
+\subsection{Labelling}
+Each match file has around 3,500 events, with only roughly around 25 of them being shots. Every shot comes with an outcome recorded by StatsBomb, which can be Off Target, Blocked, Saved, Goal, Wayward, Post, Saved Off Target, or Saved to Post. We turned these outcomes into a binary label called \texttt{is\_goal}, which is 1 when the outcome is Goal and 0 for everything else. For the labelling process no manual annotation was done or needed as the labels come straight from what actually happened to each shot.
+
+\subsection{Preprocessing}
+Our preprocessing script \texttt{data\_pipeline.py} goes through every match file and pulls out all 108,281 shots into a single table, with one row per shot. We removed 363 penalty shoot-out attempts because they are not part of regular play (i.e. over time) and do not actually count towards the final score of the game. We also removed 7 shots that had a recorded location outside the $120\times80$ yard pitch. The resulting preprocessing left us with 107,911 shots in the final dataset.
+Additionally, StatsBomb only includes true or false details such as \textit{first\_time} when they are true, so any missing value we set to 0. The 1,065 shots without a freeze frame (snapshot of where every player was standing when the shot was taken) are all penalties and a few other frames do not show the goalkeeper. These cases were filled in with fixed values instead of averages so that no information from the test set could carry over into training, and a \texttt{has\_freeze\_frame} flag was added to mark them. Any field that is only known after the ball is struck, like the outcome, where the shot ended up and StatsBomb's own xG value was left out of the model inputs since using it would give away the answer. Finally, the categorical details were one-hot encoded, giving 40 model inputs in total.
+
+\subsection{Properties}
+The final dataset has 107,911 shots. From the cumulative shot data 11,838 shots (11.0\%) are goals. Table~\ref{tab:dataset} shows that the chance of scoring drops quickly as the distance from goal increases and shots with no defender in the way are scored 2.6X as often as shots with at least one defender blocking the path.
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabular}{lrr}
+    \hline
+    \textbf{Subset} & \textbf{Shots} & \textbf{Goal rate} \\
+    \hline
+    All shots           & 107,911 & 11.0\% \\
+    Open play           & 101,911 & 10.4\% \\
+    Free kick (direct)  & 4,773   & 6.5\%  \\
+    Penalty             & 1,194   & 76.5\% \\
+    \hline
+    Distance $\le$ 6 yd & 3,400   & 44.8\% \\
+    6 to 12 yd          & 24,011  & 20.2\% \\
+    12 to 18 yd         & 25,562  & 12.6\% \\
+    18 to 24 yd         & 23,260  & 5.8\%  \\
+    $>$ 24 yd           & 31,678  & 2.8\%  \\
+    \hline
+    No defender in path & 51,885  & 16.1\% \\
+    $\ge$ 1 defender    & 56,026  & 6.2\%  \\
+    \hline
+  \end{tabular}
+  \caption{\label{tab:dataset}
+    Goal rate by shot type, distance to goal, and whether an outfield defender is standing between the shooter and the goal.}
+\end{table}
 
 \section{Features}
 
@@ -159,13 +197,13 @@ A random search with 20 trials over 100 epochs. Learning rates were sampled unif
 \centering
 \setlength{\abovecaptionskip}{3pt}
 \setlength{\belowcaptionskip}{0pt}
-\includegraphics[width=\columnwidth]{../progress-report/artifacts/training_loss.png}
+\includegraphics[width=\columnwidth]{training_loss.png}
 \caption{Training cross-entropy over 100 epochs for the selected logistic regression model.}
 \label{fig:training-loss}
 \end{figure}
 \endgroup
 
-The Logistic Regression model was compared to the majority vote which always predicts no goal, the constant-probability baseline which predicts based on the full training set's average of binary labels, and the model produced by Statsbomb which uses gradient-boosted decision trees.
+The Logistic Regression model was compared to majority vote which always predicts no goal, constant-probability baseline which predicts based on the full training set's average of binary labels, and the model produced by Statsbomb which uses gradient-boosted decision trees. Note: Statsbomb's validation loss comes from the same CE loss equation where \(\hat{y}_i\) is the Statsbomb xG probability extracted from the dataset, while \(y_i\) is the actual outcome both coming from the validation split.
 
 \begin{table}[H]
 \centering
@@ -263,6 +301,8 @@ This an example cross-reference to Equation~\ref{eq:example}. You can also write
 \section*{Team Contributions}
 
 \textbf{Andrew Habib (habiba21):} Completed the Introduction and Implementation sections of the report and implemented the model and training pipeline while comparing to majority, constant, and statsbomb baselines.
+
+\textbf{Ali Zia (ziam8):} Completed the Dataset and Results and Evaluations sections of the report and implemented the data preprocessing code.
 
 % Bibliography entries for the entire Anthology, followed by custom entries
 %\bibliography{custom,anthology-overleaf-1,anthology-overleaf-2}
