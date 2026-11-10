@@ -300,7 +300,7 @@ This an example cross-reference to Equation~\ref{eq:example}. You can also write
 
 \section*{Team Contributions}
 
-\textbf{Andrew Habib (habiba21):} Completed the Introduction and Implementation sections of the report and implemented the model and training pipeline while comparing to majority, constant, and statsbomb baselines.
+\textbf{Andrew Habib (habiba21):} Completed the Introduction and Implementation sections of the report and implemented the model and training pipeline while comparing to majority, constant, and StatsBomb baselines.
 
 \textbf{Ali Zia (ziam8):} Completed the Dataset and Results and Evaluations sections of the report and implemented the data preprocessing code.
 
@@ -316,5 +316,48 @@ This an example cross-reference to Equation~\ref{eq:example}. You can also write
 % \label{sec:appendix}
 
 % This is an appendix.
+\section*{AI Disclosure}
+\begin{itemize}
+    \item \textbf{Introduction:}
+    
+    ChatGPT: 4.32g CO2 per search query
+    \begin{itemize}
+        \item 2 queries requesting wording and formatting feedback for revision.
+    \end{itemize}
+    \item \textbf{Implementation:}
+    
+    ChatGPT: 4.32g CO2 per search query
+    \begin{itemize}
+        \item 4 queries providing it with the equations I needed to explain my section and it returned the equation in LaTeX form.
+        \item 1 additional query to ask it if there were important equations missed for a logistic regression model with SGD.
+        \item 1 query to ask if better to denote each row i or just keep general without the subscripts.
+        \item 1 query to ask what details from mini-batch SGD are important to discuss.
+        \item 1 query to help correctly phrase the element-wise operation detail.
+        \item 1 query to fix phrasing for hyperparameters shown especially fixing the sampling of learning rates sentence.
+        \item 1 query to help me format my figure and table with the necessary details.
+    \end{itemize}
+    \item \textbf{models.py:}
+    
+    ChatGPT: 4.32g CO2 per search query
+    \begin{itemize}
+        \item 1 query to help determine the best baselines to use in addition to StatsBomb xG baseline.
+        \item 2 queries to help create class structures for the Logistic Regression and Constant Baseline Classes before using Tutorial 3 techniques to implement fitting and prediction.
+        \item 2 queries to fix a few issues including using correct operators (e.g. @ instead of *) and ensuring that the standard deviation could not be 0.
+        \item 2 queries to re-implement the same cross entropy formula for the constant baselines ensuring log(0) operation is not possible
+    \end{itemize}
+
+    \item \textbf{train.py:}
+    
+    ChatGPT: 4.32g CO2 per search query
+    \begin{itemize}
+        \item 1 query to help ensure proper filtering in data splitting part of the script and formatting based on split.
+        \item 2 queries to help break down the training into modules/parts.
+        \item 3 queries to help organize records for all models across search\_hyperparameters and compare\_baselines.
+        \item 1 query to help with formulating the CE loss for the StatsBomb xG using the validation split.
+        \item 2 queries to help create some print statements in some functions to track progress.
+        \item 2 queries to help with results saving and determining the best way to contain data in a tabular way in csv and using joblib.
+        \item 2 queries to help with determining and building a graph that can represent Training CE over a given number of epochs.
+    \end{itemize}
+\end{itemize}
 
 \end{document}
