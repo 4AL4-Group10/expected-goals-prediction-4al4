@@ -156,6 +156,73 @@ Downloaded/processed data, virtual environments, logs, and generated artifacts
 are excluded by `.gitignore`; rerun the commands to regenerate them.
 The result summary above remains in version control.
 
+## Final Evaluation on Test Set
+
+Before evaluating the test set, ensure pre processing is complete and the training 
+stage is complete. The progress-report/artifacts directory must be populated
+accordingly. To run the evaluation:
+
+Default run:
+
+```bash
+python progress-report/evaluate.py
+```
+
+This tests the trained logistic regression model side by side with all of the 
+baselines. The following tables summarize the results:
+
+*Loss Function Results for Trained LR Model and each Baseline*
+| Model/Reference | Test Cross-Entropy | Test Brier Score | Test ROC-AUC Score |
+| --- | ---: | ---: | ---: |
+| Majority class | 3.07199 | 0.111179 | 0.5 |
+| Constant training goal probability | 0.348988 | 0.098821 | 0.5|
+| Selected logistic regression | 0.270382 | 0.077240 | 0.816711|
+| Supplied StatsBomb xG | 0.270069 | 0.076434 | 0.817325|
+
+*Percentage Improvement in Loss for Trained LR Model vs each Baseline*
+| Model/Reference | Test Cross-Entropy Improvement (%) | Test Brier Score Improvement (%) |
+| --- | ---: | ---: |
+| Majority class | 91.1985 | 30.5266 | 
+| Constant training goal probability | 22.5239 | 21.8387 | 
+| Supplied StatsBomb xG | -0.11598 | -1.05390 |
+
+As can be observed by the cross entropy loss values, the trained LR model vastly outperforms 
+the majority and constant probability baselines. It incurs slightly greater loss than the
+Supplied StatsBomb xG model. This is reasonable since this model is highly optimized with 
+XGBoost techniques instead of our trained logistic regression model. A similar observation
+can be made from the percent improvements: the logistic regression model is performing
+very slightly worse than the StatsBomb model. The ROC-AUC score indicates that the two 
+constant probability baselines are essentially predicting probabilities randomly. The higher
+values for this score suggest that for both the other models, 81% of the time they predict
+a higher expected goal probability, it is actually turning into a goal. This figure is 
+generally good, and since our model is close to the baseline, it further reaffirms it is 
+performing well. There are no significant differences in the loss measured during the 
+validation and test stages (both validation and test datasets were roughly equal in data 
+points), further suggesting that the trained LR model is generalizing quite well.
+
+From the generated calibration curves, the quantile graph suggests that most chances
+are assigned probabilities between 0-0.3. Both models demonstrate relatively good 
+calibration within this range, with their predictions remaining close to the ideal diagonal.
+Therefore the prediction is very close to the observed goal frequency for this range. 
+As the probability gets higher, both models become a lot more erratic in the uniform graph 
+due to less training data being available for these chances, making the prediction a lot more 
+sensitive to individual outcomes in the training data instead of providing a general result. This also 
+tells us that there are a lot less extreme danger chances than low to medium 
+danger chances in a real game.
+
+Therefore, this trained LR model is quite a powerful model overall. When compared
+to an industry standard tool like the StatsBomb xG predictor, it performs nearly as well. 
+This is shown by its similar cross entropy loss, Brier Score, ROC AUC Score, and calibration. 
+
+## Saved outputs
+
+After the evaluation completes, `progress-report/eval_results/` contains:
+
+- `test_set_model_evaluations.csv`: all evaluated scores and loss functions for the trained LR and baseline models.
+- `lr_improvement_percentage_wrt_baseline.csv`: all improvement percentages for the trained LR model with respect to each baseline.
+- `uniform_datapoints_calibration_curve.png`: calibration curves when evaluating the test set with the trained LR model and StatsBomb Baseline compared to a perfect predictor. Uses 25 bins, with bins spaced uniformly across probabilities from 0 to 1. 
+- `quantile_datapoints_calibration_curve.png`: calibration curves when evaluating the test set with the trained LR model and StatsBomb Baseline compared to a perfect predictor. Uses 25 bins, with quantile bin spacing. This means the data points were sorted and assigned to evenly sized bins in ascending order.   
+
 ## Data credit
 
 Data source: StatsBomb Open Data. Follow the repository's
