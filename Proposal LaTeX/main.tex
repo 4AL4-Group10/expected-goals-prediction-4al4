@@ -388,6 +388,13 @@ This an example cross-reference to Equation~\ref{eq:example}. You can also write
     \begin{itemize}
         \item 2 queries requesting wording and formatting feedback for revision.
     \end{itemize}
+    \item \textbf{Related Work:}
+    
+    ChatGPT: 4.32g CO2 per search query
+    \begin{itemize}
+        \item 1 query asking about the bibliography structure of code and how to use it
+        \item 2 queries requesting formatted citations for all of the used sources
+    \end{itemize}
     \item \textbf{Implementation:}
     
     ChatGPT: 4.32g CO2 per search query
@@ -421,6 +428,17 @@ This an example cross-reference to Equation~\ref{eq:example}. You can also write
         \item 2 queries to help create some print statements in some functions to track progress.
         \item 2 queries to help with results saving and determining the best way to contain data in a tabular way in csv and using joblib.
         \item 2 queries to help with determining and building a graph that can represent Training CE over a given number of epochs.
+    \end{itemize}
+    \item \textbf{evaluate.py:}
+    
+    ChatGPT: 4.32g CO2 per search query
+    \begin{itemize}
+        \item 3 queries to summarize and interpret pre-processing code and training code
+        \item 5 queries to help recreate the test data set from the output artifacts from train.py, and to explain what some lines of codes do
+        \item 1 query to retrieve StatsBomb xG from original processed dataset
+        \item 1 query to help output calibration curves and loss results as a .csv
+        \item 3 queries to get loss formula for Brier Score, and how to get ROC-AUC and calibration curve with sklearn 
+        \item 2 queries to review the corresponding README entry for evaluation to ensure all conclusions made sense
     \end{itemize}
 \end{itemize}
 
