@@ -89,7 +89,17 @@ For this report, logistic regression is implemented along with binary cross-entr
 
 \section{Related Work}
 
-Here, talk about the related work you encountered for your approach. Cite at least 5 references. Refer to item 2. No one has done exactly your task? Write about the most similar thing you can find. This should be around 0.25-0.5 pages.
+Existing xG predictors typically use XGBoost models to make precise predictions for categorical factors (e.g. was a shot using the foot or head, was it off a dribble or first time, etc) \citep{StatsBombGlossary, Whitmore2023}. The most popular of such models include Opta and StatsBomb, which are used by the top professional teams worldwide. This makes them effective baselines to evaluate our model. 
+
+Related works establish a consistent baseline feature set: shot position, shot type (e.g. first time, off dribble, etc), and body part, \citep{Fairchild2018, Bandara2024, Appiah2026}. One study compared an LR model with no feature engineering with an RF model that additionally computes the shot distance, angle, and defensive coverage \citep{Bandara2024}. A second study uses these metrics to evaluate defensive and offensive efficiency \citep{Fairchild2018}, with another investigating the improvement when iteratively including more of these baseline features during training \citep{Appiah2026}. All three studies agree that the shot position and shot angle are the most important features overall \citep{Fairchild2018,Bandara2024,Appiah2026}. 
+
+A fourth study tested the importance of non-standard features like the gameweek, age of the shooter, match attendance, match importance and team form \citep{Mead2023}. They designed 5 ML models and found that the most consistent models across the top 5 European soccer leagues were (in order): XGBoost, MLP, LR, RF, and ADABoost \citep{Mead2023}. Of the 27 total features (10 standard, 17 non-standard), 6 out of the top 10 most significant were non-standard features \citep{Mead2023} that we could consider for our model. 
+
+A different approach to predicting xG is to analyze the possible sequence of events leading to a shot instead of the shot itself. One of these studies created a system for analyzing how each play increases or decreases the probability of scoring a goal \citep{Decroos2019}. Therefore, the model takes in a game state and based on the previous events, it predicts how likely that state is to result in a goal \citep{Decroos2019}. 
+
+
+%Here, talk about the related work you encountered for your approach. Cite at least 5 references. Refer to item 2. No one has done exactly your task? Write about the most similar thing you can find. This should be around 0.25-0.5 pages.
+
 
 \section{Dataset}
 % You should write about your dataset here, following the guidelines regarding item 1. This section may be 0.5-1 pages. Depending on your specific dataset, you may want to include subsections for the preprocessing, annotation, etc.
@@ -135,8 +145,7 @@ The final dataset has 107,911 shots. From the cumulative shot data 11,838 shots 
 
 \section{Features}
 
-Describe any features you used for your model, or how your data was input to your model. Are you doing feature engineering or feature selection? Are you learning embeddings? Is it all part of one neural network? Refer to item 2. This may range from 0.25 pages to 0.5 pages.
-
+The raw data was available as JSON files in an open Github repository. This repository was cloned and pre-processed into a .csv file that could be loaded and input to our training code. From the raw feature set, each categorical feature was converted into a one hot vector (i.e. \texttt{body\_part}, \texttt{technique}, \texttt{shot\_type}, \texttt{play\_pattern}, \texttt{under\_pressure}). All studies agreed that shot distance and angle were the most important parameters \citep{Fairchild2018, Bandara2024, Appiah2026}. Therefore, feature engineering was done to convert the shot (x,y) coordinates to a distance and an angle. Feature engineering was also done to extract the number of defenders blocking a shot. The dataset provides all nearby players and their positions, so if a player appeared within the triangle between the ball and both goal posts, they were considered to be in the way. The goalkeeper’s distance from the goal was also calculated as a feature to investigate. If they were too close to the goal, they are worse at closing down the shot angle but standing too far leaves the net wide open. Therefore, this feature was also looked into. No feature augmentation was done due to the large size of the dataset. Only shot events were picked out of the available pass, control, dribble, foul, and defensive events since those details do not directly affect the shot. However, future investigations might be done to analyze how these build-up features may affect the goal scoring probability. 
 \section{Implementation}
 
 % Describe your model and implementation here. Refer to item 4. This may take around a page.
@@ -231,7 +240,15 @@ How are you evaluating your model? What results do you have so far? What are you
 
 \section{Feedback and Plans}
 
-Write about your plans for the remainder of the project. This should include a discussion of the feedback you received from your TA, and how you plan to improve your approach. Reflect on your implementation and areas for improvement. Refer to item 6. This may be around 0.5 pages.
+\textbf{Consulted TA:} Shreya
+
+The TA discussion was used to discuss the current state of our logistic regression model and our next steps for improving it. To start, we described to her the problem, our feature engineering, and pre-processing steps with reference to related work. She agreed that the set of features we had so far made sense and that LR was a suitable baseline model since we were predicting a probability. 
+
+Since our dataset also includes the official StatsBomb expected goal prediction, we also showed her our evaluated validation and test set losses for both models. In all cases (e.g. Cross-Entropy Loss, Brier Score, ROC-AUC), our model performed between 0.1 - 1.1 percent worse than the optimized industry standard StatsBomb predictions. Therefore she suggested that it may be difficult to further fine tune this model and it may be a good idea to try a different model to make up the remainder of the loss. She noted that if our research says that professional companies all use XGBoost, it is a good idea for us to try implementing an XGBoost model of our own. Another related study also indicates that MLP performed better than LR during their testing, so we could also try that as well. 
+
+If we still want to stick with the LR model, she suggested that there may be other feature engineering or interesting features we could investigate. For example, instead of just using the feature $distance$, we could also give it a $distance^2$ to represent if it is exponentially harder to score from further away than from close to the net. 
+
+Moving forward, our plan is to first try some polynomial scaled features to further reduce our loss with the LR model. Since this model is already implemented, it will be reasonably easy to make and test this change. The overall training and evaluation process also took less time than we each anticipated, so for the coming weeks, we intend to try a larger variety of models including XGBoost, Neural Networks, and Random Forest. Most of the pre-processing and evaluation can be directly reused, so we can better focus our efforts on training and testing new models. 
 
 \section{Template Notes}
 
@@ -302,7 +319,11 @@ This an example cross-reference to Equation~\ref{eq:example}. You can also write
 
 \textbf{Andrew Habib (habiba21):} Completed the Introduction and Implementation sections of the report and implemented the model and training pipeline while comparing to majority, constant, and statsbomb baselines.
 
-\textbf{Ali Zia (ziam8):} Completed the Dataset and Results and Evaluations sections of the report and implemented the data preprocessing code.
+\vspace{0.5em}
+\noindent \textbf{Ali Zia (ziam8):} Completed the Dataset and Results and Evaluations sections of the report and implemented the data preprocessing code.
+
+\vspace{0.5em}
+\noindent \textbf{Gurmanjot Minhas (minhag7):} Completed the Related Work, Features, and Feedback and Plans sections of the report. I implemented the evaluation code to compute cross entropy loss, brier scores, ROC-AUC scores, and a calibration curve for our model and each baseline.
 
 % Bibliography entries for the entire Anthology, followed by custom entries
 %\bibliography{custom,anthology-overleaf-1,anthology-overleaf-2}
