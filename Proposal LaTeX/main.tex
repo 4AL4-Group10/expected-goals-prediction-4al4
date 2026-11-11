@@ -19,6 +19,7 @@
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{amsmath}
+\usepackage{tabularx}
 
 % If the title and author information does not fit in the area allocated, uncomment the following
 %
@@ -146,6 +147,45 @@ The final dataset has 107,911 shots. From the cumulative shot data 11,838 shots 
 \section{Features}
 
 The raw data was available as JSON files in an open Github repository. This repository was cloned and pre-processed into a .csv file that could be loaded and input to our training code. From the raw feature set, each categorical feature was converted into a one hot vector (i.e. \texttt{body\_part}, \texttt{technique}, \texttt{shot\_type}, \texttt{play\_pattern}, \texttt{under\_pressure}). All studies agreed that shot distance and angle were the most important parameters \citep{Fairchild2018, Bandara2024, Appiah2026}. Therefore, feature engineering was done to convert the shot (x,y) coordinates to a distance and an angle. Feature engineering was also done to extract the number of defenders blocking a shot. The dataset provides all nearby players and their positions, so if a player appeared within the triangle between the ball and both goal posts, they were considered to be in the way. The goalkeeper’s distance from the goal was also calculated as a feature to investigate. If they were too close to the goal, they are worse at closing down the shot angle but standing too far leaves the net wide open. Therefore, this feature was also looked into. No feature augmentation was done due to the large size of the dataset. Only shot events were picked out of the available pass, control, dribble, foul, and defensive events since those details do not directly affect the shot. However, future investigations might be done to analyze how these build-up features may affect the goal scoring probability. 
+
+
+\begin{table}[H]
+\centering
+\caption{Features Used in the Logistic Regression Model}
+\label{tab:model_features}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\columnwidth}{|l|l|X|}
+\hline
+\textbf{Feature} & \textbf{Encoding} & \textbf{Description} \\ \hline
+
+x & Numeric & Range: 0--120 (pitch coordinate) \\ \hline
+y & Numeric & Range: 0--80 (pitch coordinate) \\ \hline
+distance & Numeric & Distance to goal centre (yards) \\ \hline
+angle & Numeric & Angle between goalposts (radians) \\ \hline
+minute & Numeric & Match minute \\ \hline
+defenders\_in\_way & Numeric & Number of defenders between shooter and goal \\ \hline
+nearest\_opponent\_dist & Numeric & Distance to nearest opponent (yards) \\ \hline
+keeper\_dist\_to\_goal & Numeric & Goalkeeper distance to goal centre (yards) \\ \hline
+
+first\_time & Binary & True/False \\ \hline
+aerial\_won & Binary & True/False \\ \hline
+one\_on\_one & Binary & True/False \\ \hline
+open\_goal & Binary & True/False \\ \hline
+follows\_dribble & Binary & True/False \\ \hline
+under\_pressure & Binary & True/False \\ \hline
+has\_freeze\_frame & Binary & True/False \\ \hline
+
+shot\_type\_* & One-hot & Categories: Open Play, Free Kick, Penalty, Corner, Kick Off \\ \hline
+body\_part\_* & One-hot & Categories: Right Foot, Left Foot, Head, Other \\ \hline
+technique\_* & One-hot & Categories: Normal, Half Volley, Volley, Lob, Overhead Kick, Backheel, Diving Header \\ \hline
+play\_pattern\_* & One-hot & Categories: Regular Play, From Free Kick, From Throw In, From Corner, From Counter, From Goal Kick, From Keeper, From Kick Off, Other \\ \hline
+
+\end{tabularx}
+\end{table}
+
+
 \section{Implementation}
 
 % Describe your model and implementation here. Refer to item 4. This may take around a page.
