@@ -93,7 +93,7 @@ Existing xG predictors typically use XGBoost models to make precise predictions 
 
 Related works establish a consistent baseline feature set: shot position, shot type (e.g. first time, off dribble, etc), and body part, \citep{Fairchild2018, Bandara2024, Appiah2026}. One study compared an LR model with no feature engineering with an RF model that additionally computes the shot distance, angle, and defensive coverage \citep{Bandara2024}. A second study uses these metrics to evaluate defensive and offensive efficiency \citep{Fairchild2018}, with another investigating the improvement when iteratively including more of these baseline features during training \citep{Appiah2026}. All three studies agree that the shot position and shot angle are the most important features overall \citep{Fairchild2018,Bandara2024,Appiah2026}. 
 
-A fourth study tested the importance of non-standard features like the gameweek, age of the shooter, match attendance, match importance and team form \citep{Mead2023}. They designed 5 ML models and found that the most consistent models across the top 5 European soccer leagues were (in order): XGBoost, MLP, LR, RF, and ADABoost \citep{Mead2023}. Of the 27 total features (10 standard, 17 non-standard), 6 out of the top 10 most significant were non-standard features \citep{Mead2023} that we could consider for our model. 
+A fourth study tested the importance of non-baseline features like the gameweek, age of the shooter, match attendance, match importance and team form \citep{Mead2023}. They designed 5 ML models and found that the most consistent models across the top 5 European soccer leagues were (in order): XGBoost, MLP, LR, RF, and ADABoost \citep{Mead2023}. Of the 27 total features (10 baseline, 17 non-baseline), 6 out of the top 10 most significant were non-baseline features \citep{Mead2023} that we could consider for our model. 
 
 A different approach to predicting xG is to analyze the possible sequence of events leading to a shot instead of the shot itself. One of these studies created a system for analyzing how each play increases or decreases the probability of scoring a goal \citep{Decroos2019}. Therefore, the model takes in a game state and based on the previous events, it predicts how likely that state is to result in a goal \citep{Decroos2019}. 
 
@@ -265,10 +265,10 @@ The results show that the model our team developed using Logistic Regression yie
       \hline
       \textbf{Model} & \textbf{CE} & \textbf{Brier} & \textbf{AUC} \\
       \hline
-      Majority vote        & 3.0720 & 0.1112 & 0.500 \\
-      Constant probability & 0.3490 & 0.0988 & 0.500 \\
-      Logistic regression  & 0.2704 & 0.0772 & 0.817 \\
-      StatsBomb xG         & 0.2701 & 0.0764 & 0.817 \\
+      Majority vote        & 3.0720 & 0.1112 & 0.5000 \\
+      Constant probability & 0.3490 & 0.0988 & 0.5000 \\
+      Logistic regression  & 0.2704 & 0.0772 & 0.8167 \\
+      StatsBomb xG         & 0.2701 & 0.0764 & 0.8173 \\
       \hline
     \end{tabular}
     \caption{\label{tab:test-results}
@@ -276,10 +276,17 @@ The results show that the model our team developed using Logistic Regression yie
   \end{table}
 
   As seen in Table~\ref{tab:test-results}, logistic regression clearly beats both baselines. It lowers the cross-entropy by 22.5\% and the Brier score by 21.8\%
-  compared to the constant-probability baseline. Both baselines have an AUC of 0.5 since they give every shot the same value. Our model is only 0.1\% worse than
-  StatsBomb's xG in cross-entropy and about 1\% worse in Brier score, with the same AUC of 0.817. The test cross-entropy of 0.270 is close to the validation
+  compared to the constant-probability baseline. Both baselines have an AUC of 0.5000 since they give every shot the same value. Our model is only 0.1\% worse than
+  StatsBomb's xG in cross-entropy and about 1\% worse in Brier score, with a negligible difference AUC of 0.0006. The test cross-entropy of 0.270 is close to the validation
   cross-entropy of 0.266, so the model generalizes well to unseen matches. The calibration curves show both models are well calibrated below an xG of 0.3, which
   covers about 92\% of test shots. Above that the curves are noisier since there are few high xG shots.
+
+  \begin{figure}[h]
+    \centering
+    \includegraphics[width=\columnwidth]{uniform_datapoints_calibration_curve.png}
+    \caption{Calibration curve (25 bins, uniform strategy) for logistic regression and StatsBomb xG models against perfect calibration.}
+    \label{fig:uniform-calibration}
+  \end{figure}
 
 \section{Feedback and Plans}
 
@@ -291,72 +298,7 @@ Since our dataset also includes the official StatsBomb expected goal prediction,
 
 If we still want to stick with the LR model, she suggested that there may be other feature engineering or interesting features we could investigate. For example, instead of just using the feature $distance$, we could also give it a $distance^2$ to represent if it is exponentially harder to score from further away than from close to the net. 
 
-Moving forward, our plan is to first try some polynomial scaled features to further reduce our loss with the LR model. Since this model is already implemented, it will be reasonably easy to make and test this change. The overall training and evaluation process also took less time than we each anticipated, so for the coming weeks, we intend to try a larger variety of models including XGBoost, Neural Networks, and Random Forest. Most of the pre-processing and evaluation can be directly reused, so we can better focus our efforts on training and testing new models. 
-
-\section{Template Notes}
-
-You can remove this section or comment it out, as it only contains instructions for how to use this template. You may use subsections in your document as you find appropriate.
-
-\subsection{Tables and figures}
-
-See Table~\ref{citation-guide} for an example of a table and its caption.
-
-
-\begin{figure*}[t]
-  \includegraphics[width=0.48\linewidth]{example-image-a} \hfill
-  \includegraphics[width=0.48\linewidth]{example-image-b}
-  \caption {A minimal working example to demonstrate how to place
-    two images side-by-side.}
-\end{figure*}
-
-
-\subsection{Citations}
-
-\begin{table*}
-  \centering
-  \begin{tabular}{lll}
-    \hline
-    \textbf{Output}           & \textbf{natbib command} & \textbf{ACL only command} \\
-    \hline
-    \citep{Gusfield:97}       & \verb|\citep|           &                           \\
-    \citealp{Gusfield:97}     & \verb|\citealp|         &                           \\
-    \citet{Gusfield:97}       & \verb|\citet|           &                           \\
-    \citeyearpar{Gusfield:97} & \verb|\citeyearpar|     &                           \\
-    \citeposs{Gusfield:97}    &                         & \verb|\citeposs|          \\
-    \hline
-  \end{tabular}
-  \caption{\label{citation-guide}
-    Citation commands supported by the style file.
-  }
-\end{table*}
-
-Table~\ref{citation-guide} shows the syntax supported by the style files.
-We encourage you to use the natbib styles.
-You can use the command \verb|\citet| (cite in text) to get ``author (year)'' citations, like this citation to a paper by \citet{Gusfield:97}.
-You can use the command \verb|\citep| (cite in parentheses) to get ``(author, year)'' citations \citep{Gusfield:97}.
-You can use the command \verb|\citealp| (alternative cite without parentheses) to get ``author, year'' citations, which is useful for using citations within parentheses (e.g. \citealp{Gusfield:97}).
-
-\subsection{References}
-
-\nocite{Ando2005,andrew2007scalable,rasooli-tetrault-2015}
-
-Many websites where you can find academic papers also allow you to export a bib file for citation or bib formatted entry. Copy this into the \texttt{custom.bib} and you will be able to cite the paper in the \LaTeX{}. You can remove the example entries.
-
-\subsection{Equations}
-
-An example equation is shown below:
-\begin{equation}
-  \label{eq:example}
-  A = \pi r^2
-\end{equation}
-
-Labels for equation numbers, sections, subsections, figures and tables
-are all defined with the \verb|\label{label}| command and cross references
-to them are made with the \verb|\ref{label}| command.
-This an example cross-reference to Equation~\ref{eq:example}. You can also write equations inline, like this: $A=\pi r^2$.
-
-
-% \section*{Limitations}
+Moving forward, our plan is to first try some polynomial scaled features to further reduce our loss with the LR model. Since this model is already implemented, it will be reasonably easy to make and test this change. The overall training and evaluation process also took less time than we each anticipated, so for the coming weeks, we intend to try a larger variety of models including XGBoost, Neural Networks, and Random Forest. Most of the pre-processing and evaluation can be directly reused, so we can better focus our efforts on training and testing new models.
 
 \section*{Team Contributions}
 
