@@ -111,8 +111,8 @@ The current release of the dataset has 4,235 matches which is more than the 3,23
 Each match file has around 3,500 events, with only roughly around 25 of them being shots. Every shot comes with an outcome recorded by StatsBomb, which can be Off Target, Blocked, Saved, Goal, Wayward, Post, Saved Off Target, or Saved to Post. We turned these outcomes into a binary label called \texttt{is\_goal}, which is 1 when the outcome is Goal and 0 for everything else. For the labelling process no manual annotation was done or needed as the labels come straight from what actually happened to each shot.
 
 \subsection{Preprocessing}
-Our preprocessing script \texttt{data\_pipeline.py} goes through every match file and pulls out all 108,281 shots into a single table, with one row per shot. We removed 363 penalty shoot-out attempts because they are not part of regular play (i.e. over time) and do not actually count towards the final score of the game. We also removed 7 shots that had a recorded location outside the $120\times80$ yard pitch. The resulting preprocessing left us with 107,911 shots in the final dataset.
-Additionally, StatsBomb only includes true or false details such as \textit{first\_time} when they are true, so any missing value we set to 0. The 1,065 shots without a freeze frame (snapshot of where every player was standing when the shot was taken) are all penalties and a few other frames do not show the goalkeeper. These cases were filled in with fixed values instead of averages so that no information from the test set could carry over into training, and a \texttt{has\_freeze\_frame} flag was added to mark them. Any field that is only known after the ball is struck, like the outcome, where the shot ended up and StatsBomb's own xG value was left out of the model inputs since using it would give away the answer. Finally, the categorical details were one-hot encoded, giving 40 model inputs in total.
+Our preprocessing script \texttt{data\_processing.py} goes through every match file and pulls out all 108,281 shots into a single table, with one row per shot. We removed 363 penalty shoot-out attempts because they are not part of regular play and so do not actually count towards the final score of the game. We also removed 7 shots that had a recorded location outside the $120\times80$ yard pitch. The resulting preprocessing left us with 107,911 shots in the final dataset.
+Additionally, StatsBomb only includes true or false details such as \textit{first\_time} when they are true, so any missing value we set to 0. The 1,065 shots without a freeze frame (snapshot of where every player was standing when the shot was taken) are all penalties and a few other frames do not show the goalkeeper. These cases were filled in with fixed values instead of averages so that no information from the test set could carry over into training, and a \texttt{has\_freeze\_frame} flag was added to mark the shots without a freeze frame. Any field that is only known after the ball is struck, like the outcome, where the shot ended up and StatsBomb's own xG value was left out of the model inputs since using it would give away the answer. Finally, the categorical details were one-hot encoded, giving 40 model inputs in total.
 
 \subsection{Properties}
 The final dataset has 107,911 shots. From the cumulative shot data 11,838 shots (11.0\%) are goals. Table~\ref{tab:dataset} shows that the chance of scoring drops quickly as the distance from goal increases and shots with no defender in the way are scored 2.6X as often as shots with at least one defender blocking the path.
@@ -234,9 +234,52 @@ StatsBomb xG & --- & 0.264980 \\
 
 The results show that the model our team developed using Logistic Regression yields lower losses than the Majority vote and Constant probability baseline models by 2.750335 and 0.078439 respectively. The model also performs almost as well as Statsbomb's optimized model with a difference of about -0.001374.
 
-\section{Results and Evaluation}
+ \section{Results and Evaluation}
+  \label{sec:results}
 
-How are you evaluating your model? What results do you have so far? What are your baselines? Refer to item 5. This may take around 0.5 pages.
+  \subsection{Evaluation Strategy}
+
+  The dataset was split into training, validation and test sets using a 70/15/15 split. The split was done by match, so all shots from the same match end up in the
+  same set. This stops information from the test set leaking into training, since shots from the same match share the same teams and game situation. This gave 75,429
+  training shots, 16,148 validation shots and 16,334 test shots. The validation set was used to choose the hyperparameters and the test set was only used once for
+  the final evaluation. Cross-validation was not used since the validation set is large enough to give a reliable estimate.
+
+  \subsection{Metrics}
+
+  Only around 11\% of shots are goals, so a model that always predicts no goal would already be 89\% accurate. Because of this, accuracy is not used. Instead, we
+  evaluate the predicted probabilities with four metrics. Cross-entropy is the main metric since it is the loss the model is trained on. The Brier score is the
+  average squared difference between the predicted probability and the actual outcome. ROC-AUC measures how well the model ranks goals above non-goals, where 0.5
+  means no better than chance. Calibration curves with 25 bins check whether shots given an xG of 0.3 actually go in about 30\% of the time.
+
+  \subsection{Baselines}
+
+  The majority vote baseline always predicts no goal. The constant-probability baseline gives every shot the goal rate of the training set. We also compare against
+  StatsBomb's own xG values as an industry reference.
+
+  \subsection{Results}
+
+  \begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{lrrr}
+      \hline
+      \textbf{Model} & \textbf{CE} & \textbf{Brier} & \textbf{AUC} \\
+      \hline
+      Majority vote        & 3.0720 & 0.1112 & 0.500 \\
+      Constant probability & 0.3490 & 0.0988 & 0.500 \\
+      Logistic regression  & 0.2704 & 0.0772 & 0.817 \\
+      StatsBomb xG         & 0.2701 & 0.0764 & 0.817 \\
+      \hline
+    \end{tabular}
+    \caption{\label{tab:test-results}
+      Test set cross-entropy, Brier score and ROC-AUC for each model.}
+  \end{table}
+
+  As seen in Table~\ref{tab:test-results}, logistic regression clearly beats both baselines. It lowers the cross-entropy by 22.5\% and the Brier score by 21.8\%
+  compared to the constant-probability baseline. Both baselines have an AUC of 0.5 since they give every shot the same value. Our model is only 0.1\% worse than
+  StatsBomb's xG in cross-entropy and about 1\% worse in Brier score, with the same AUC of 0.817. The test cross-entropy of 0.270 is close to the validation
+  cross-entropy of 0.266, so the model generalizes well to unseen matches. The calibration curves show both models are well calibrated below an xG of 0.3, which
+  covers about 92\% of test shots. Above that the curves are noisier since there are few high xG shots.
 
 \section{Feedback and Plans}
 

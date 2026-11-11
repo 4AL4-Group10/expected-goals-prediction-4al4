@@ -1,5 +1,3 @@
-# data_processing.py
-#
 # you can run with:  python data_processing.py
 # Turns StatsBomb match files into one table where each row is a shot.
 # result will be saved to data/processed/shots.csv (so it can be used for training)
@@ -138,7 +136,6 @@ def get_shots(path):
             "body_part": shot["body_part"]["name"],
             "technique": shot["technique"]["name"],
             "play_pattern": event["play_pattern"]["name"],
-            # under_pressure is stored on the event itself, not inside the shot since its an event not an aspect of the shot
             "under_pressure": int(event.get("under_pressure", False)),
         }
         for flag in SHOT_FLAGS:
@@ -192,7 +189,7 @@ def main():
 
     # Period 5 is a penalty shootout, which isn't normal play and doesn't count to the score
     shootout = df["period"] == 5
-    # A few shots have locations that are off the pitch??? which has to be a recording error
+    # A few shots have locations that are off the pitch??? which has to be a recording error, so removing them
     off_pitch = ~df["x"].between(0, 120) | ~df["y"].between(0, 80)
     df = df[~shootout & ~off_pitch]
     df = df.drop_duplicates("event_id")
